@@ -1,61 +1,170 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# الگوی طراحی به زبان ساده - Decorator در لاراول
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## 📌 مقدمه
+الگوی **Decorator** به ما اجازه می‌دهد بدون تغییر در کلاس اصلی، قابلیت‌های جدیدی به آن اضافه کنیم.  
+این الگو به‌خصوص وقتی مفید است که می‌خواهیم **رفتارهای مختلفی** را به‌صورت **پویا** و **قابل ترکیب** به یک شیء اضافه کنیم.
 
-## About Laravel
+در این مثال یک سرویس پیام ساده داریم و با استفاده از **Decorator** قابلیت‌های زیر را به آن اضافه می‌کنیم:
+- ثبت لاگ پیام
+- رمزنگاری پیام
+- اضافه کردن امضای مدیریت
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🛠 مراحل پیاده‌سازی
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 1. تعریف اینترفیس پایه
+```php
+namespace App\Decorators;
 
-## Learning Laravel
+interface MessageService
+{
+    public function send(string $message): string;
+}
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 2. کلاس اصلی (کامپوننت پایه)
+```php
+namespace App\Decorators;
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+class BasicMessageService implements MessageService
+{
+    public function send(string $message): string
+    {
+        return "پیام اصلی: " . $message;
+    }
+}
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+###  3. کلاس Decorator انتزاعی
+```php
+namespace App\Decorators;
 
-## Laravel Sponsors
+abstract class MessageDecorator implements MessageService
+{
+    protected MessageService $service;
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+    public function __construct(MessageService $service)
+    {
+        $this->service = $service;
+    }
 
-### Premium Partners
+    abstract public function send(string $message): string;
+}
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+###  4. پیاده‌سازی Decoratorها
+#### لاگ‌کردن پیام
+```php
+namespace App\Decorators;
 
-## Contributing
+use Illuminate\Support\Facades\Log;
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+class LogDecorator extends MessageDecorator
+{
+    public function send(string $message): string
+    {
+        Log::info("ارسال پیام: " . $message);
+        return $this->service->send($message);
+    }
+}
+```
 
-## Code of Conduct
+###  رمزنگاری پیام
+```php
+namespace App\Decorators;
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+class EncryptDecorator extends MessageDecorator
+{
+    public function send(string $message): string
+    {
+        $encrypted = base64_encode($message);
+        return $this->service->send($encrypted);
+    }
+}
+```
 
-## Security Vulnerabilities
+###   اضافه کردن امضا
+```php
+namespace App\Decorators;
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+class SignatureDecorator extends MessageDecorator
+{
+    public function send(string $message): string
+    {
+        $result = $this->service->send($message);
+        return $result . "\n-- امضا: مدیریت سایت";
+    }
+}
+```
 
-## License
+###   5. کنترلر برای تستا
+```php
+namespace App\Http\Controllers;
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+use App\Decorators\BasicMessageService;
+use App\Decorators\EncryptDecorator;
+use App\Decorators\LogDecorator;
+use App\Decorators\SignatureDecorator;
+
+class DecoratorController extends Controller
+{
+    public function index()
+    {
+        $messageService = new BasicMessageService();
+
+        // مرحله ۱: لاگ کردن
+        $messageService = new LogDecorator($messageService);
+
+        // مرحله ۲: رمزنگاری
+        $messageService = new EncryptDecorator($messageService);
+
+        // مرحله ۳: اضافه کردن امضا
+        $messageService = new SignatureDecorator($messageService);
+
+        $finalMessage = $messageService->send("سلام کاربر عزیز!");
+
+        return response($finalMessage);
+    }
+}
+```
+
+###   6. تعریف Routeا
+#### فایل: routes/web.php
+```php
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DecoratorController;
+
+Route::get('/decorator', [DecoratorController::class, 'index']);
+```
+
+### ▶️ تست نهایی
+
+
+#### اجرای سرور:
+```php
+php artisan serve
+```
+#### مرورگر:
+```php
+http://127.0.0.1:8000/decorator
+```
+####  خروجی:
+```php
+پیام اصلی: U2FsYW0g2KrYp9mG2K8g2KrYp9ix2YbZhtuM!
+-- امضا: مدیریت سایت
+```
+####  در فایل لاگ لاراول (storage/logs/laravel.log) ثبت می‌شود:
+
+```php
+[INFO] ارسال پیام: سلام کاربر !عزیز
+```
+
+
+### 🎯 نتیجه‌گیری
+* کلاس اصلی (BasicMessageService) بدون تغییر باقی ماند.
+* رفتارهای جدید را با استفاده از Decoratorها به‌صورت ماژولار اضافه کردیم.
+* این قابلیت‌ها قابل ترکیب هستند (مثلاً فقط لاگ + امضا یا فقط رمزنگاری).
+
+
+الگوی Decorator یک روش عالی برای افزودن ویژگی‌های جانبی به کلاس‌ها بدون تغییر کد اصلی است.

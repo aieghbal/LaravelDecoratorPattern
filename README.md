@@ -1,19 +1,23 @@
-# الگوی طراحی به زبان ساده - Decorator در لاراول
+# Design Pattern Made Simple – Decorator in Laravel
 
-## 📌 مقدمه
-الگوی **Decorator** به ما اجازه می‌دهد بدون تغییر در کلاس اصلی، قابلیت‌های جدیدی به آن اضافه کنیم.  
-این الگو به‌خصوص وقتی مفید است که می‌خواهیم **رفتارهای مختلفی** را به‌صورت **پویا** و **قابل ترکیب** به یک شیء اضافه کنیم.
+## 📌 Introduction
 
-در این مثال یک سرویس پیام ساده داریم و با استفاده از **Decorator** قابلیت‌های زیر را به آن اضافه می‌کنیم:
-- ثبت لاگ پیام
-- رمزنگاری پیام
-- اضافه کردن امضای مدیریت
+The Decorator pattern allows us to add new functionalities to a class without modifying the original class.
+This pattern is especially useful when we want to add different behaviors to an object dynamically and in a composable way.
+
+In this example, we have a simple messaging service, and using the Decorator, we add the following capabilities:
+
+Logging messages
+
+Encrypting messages
+
+Adding an admin signature
 
 ---
 
-## 🛠 مراحل پیاده‌سازی
+## 🛠 Implementation Steps
 
-### 1. تعریف اینترفیس پایه
+### 1. Define the Base Interface
 ```php
 namespace App\Decorators;
 
@@ -23,7 +27,7 @@ interface MessageService
 }
 ```
 
-### 2. کلاس اصلی (کامپوننت پایه)
+### 2. Main Class (Base Component)
 ```php
 namespace App\Decorators;
 
@@ -36,7 +40,7 @@ class BasicMessageService implements MessageService
 }
 ```
 
-###  3. کلاس Decorator انتزاعی
+###  3. Abstract Decorator Class
 ```php
 namespace App\Decorators;
 
@@ -53,8 +57,8 @@ abstract class MessageDecorator implements MessageService
 }
 ```
 
-###  4. پیاده‌سازی Decoratorها
-#### لاگ‌کردن پیام
+###  4. Implementing Decorators
+#### Logging Messages
 ```php
 namespace App\Decorators;
 
@@ -70,7 +74,7 @@ class LogDecorator extends MessageDecorator
 }
 ```
 
-###  رمزنگاری پیام
+###  Encrypting Messages
 ```php
 namespace App\Decorators;
 
@@ -84,7 +88,7 @@ class EncryptDecorator extends MessageDecorator
 }
 ```
 
-###   اضافه کردن امضا
+###  Adding a Signature
 ```php
 namespace App\Decorators;
 
@@ -98,7 +102,7 @@ class SignatureDecorator extends MessageDecorator
 }
 ```
 
-###   5. کنترلر برای تستا
+###   5. Controller for Testing
 ```php
 namespace App\Http\Controllers;
 
@@ -113,13 +117,13 @@ class DecoratorController extends Controller
     {
         $messageService = new BasicMessageService();
 
-        // مرحله ۱: لاگ کردن
+        // Step 1: Logging
         $messageService = new LogDecorator($messageService);
 
-        // مرحله ۲: رمزنگاری
+        // Step 2: Encryption
         $messageService = new EncryptDecorator($messageService);
 
-        // مرحله ۳: اضافه کردن امضا
+       // Step 3: Adding Signature
         $messageService = new SignatureDecorator($messageService);
 
         $finalMessage = $messageService->send("سلام کاربر عزیز!");
@@ -129,8 +133,8 @@ class DecoratorController extends Controller
 }
 ```
 
-###   6. تعریف Routeا
-#### فایل: routes/web.php
+###   6. Define Routes
+#### File: routes/web.php
 ```php
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DecoratorController;
@@ -138,33 +142,36 @@ use App\Http\Controllers\DecoratorController;
 Route::get('/decorator', [DecoratorController::class, 'index']);
 ```
 
-### ▶️ تست نهایی
+### ▶️ Final Test
 
 
-#### اجرای سرور:
+#### Start Laravel Server:
 ```php
 php artisan serve
 ```
-#### مرورگر:
+#### Browser:
 ```php
 http://127.0.0.1:8000/decorator
 ```
-####  خروجی:
+####  Output:
 ```php
-پیام اصلی: U2FsYW0g2KrYp9mG2K8g2KrYp9ix2YbZhtuM!
--- امضا: مدیریت سایت
+Original Message: U2FsYW0g2KrYp9mG2K8g2KrYp9ix2YbZhtuM!
+-- Signature: Admin
 ```
-####  در فایل لاگ لاراول (storage/logs/laravel.log) ثبت می‌شود:
+####  Laravel Log File (storage/logs/laravel.log) Records:
 
 ```php
-[INFO] ارسال پیام: سلام کاربر !عزیز
+[INFO] Sending message: Hello dear user!
 ```
 
 
-### 🎯 نتیجه‌گیری
-* کلاس اصلی (BasicMessageService) بدون تغییر باقی ماند.
-* رفتارهای جدید را با استفاده از Decoratorها به‌صورت ماژولار اضافه کردیم.
-* این قابلیت‌ها قابل ترکیب هستند (مثلاً فقط لاگ + امضا یا فقط رمزنگاری).
+### 🎯 Conclusion
+* The main class (BasicMessageService) remained unchanged.
+* New behaviors were added modularly using Decorators.
+* These behaviors are composable (e.g., log + signature only, or encryption only).
 
 
-الگوی Decorator یک روش عالی برای افزودن ویژگی‌های جانبی به کلاس‌ها بدون تغییر کد اصلی است.
+The Decorator pattern is an excellent way to add additional features to classes without modifying the original code.
+
+---
+🌐 [Persian version](./README.fa.md)
